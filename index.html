@@ -743,17 +743,37 @@ document.getElementById('btnSave').addEventListener('click', async () => {
      → 인라인 스타일 + 픽셀 너비 고정으로 줄바꿈 원천 차단 */
   const hubBtn = page.querySelector('.hub-btn');
   const tagEls = [...page.querySelectorAll('.tag')];
+  const tagsHead = page.querySelector('.tags-head');
   if (hubBtn) {
-    hubBtn.style.whiteSpace = 'nowrap';
-    hubBtn.style.width      = hubBtn.offsetWidth + 'px';
-    hubBtn.style.minWidth   = hubBtn.offsetWidth + 'px';
-    hubBtn.style.overflow   = 'hidden';
+    hubBtn.style.display       = 'flex';
+    hubBtn.style.alignItems    = 'center';
+    hubBtn.style.whiteSpace    = 'nowrap';
+    hubBtn.style.width         = hubBtn.offsetWidth + 'px';
+    hubBtn.style.minWidth      = hubBtn.offsetWidth + 'px';
+    hubBtn.style.overflow      = 'hidden';
+    hubBtn.style.lineHeight    = '1';
+    hubBtn.style.verticalAlign = 'middle';
+  }
+  const gameTitle = page.querySelector('.game-title');
+  if (gameTitle) {
+    gameTitle.style.display      = 'block';
+    gameTitle.style.lineHeight   = '1.25';
+    gameTitle.style.verticalAlign = 'top';
+  }
+  if (tagsHead) {
+    tagsHead.style.display     = 'block';
+    tagsHead.style.lineHeight  = '1.4';
+    tagsHead.style.verticalAlign = 'middle';
   }
   tagEls.forEach(t => {
-    t.style.whiteSpace = 'nowrap';
-    t.style.width      = t.offsetWidth + 'px';
-    t.style.minWidth   = t.offsetWidth + 'px';
-    t.style.overflow   = 'hidden';
+    t.style.display        = 'flex';
+    t.style.alignItems     = 'center';
+    t.style.whiteSpace     = 'nowrap';
+    t.style.width          = t.offsetWidth + 'px';
+    t.style.minWidth       = t.offsetWidth + 'px';
+    t.style.overflow       = 'hidden';
+    t.style.lineHeight     = '1';
+    t.style.verticalAlign  = 'middle';
   });
 
   await new Promise(r => setTimeout(r, 80));
@@ -796,16 +816,34 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       el.style.boxShadow  = '';
     });
     if (hubBtn) {
-      hubBtn.style.whiteSpace = '';
-      hubBtn.style.width      = '';
-      hubBtn.style.minWidth   = '';
-      hubBtn.style.overflow   = '';
+      hubBtn.style.display       = '';
+      hubBtn.style.alignItems    = '';
+      hubBtn.style.whiteSpace    = '';
+      hubBtn.style.width         = '';
+      hubBtn.style.minWidth      = '';
+      hubBtn.style.overflow      = '';
+      hubBtn.style.lineHeight    = '';
+      hubBtn.style.verticalAlign = '';
+    }
+    if (gameTitle) {
+      gameTitle.style.display       = '';
+      gameTitle.style.lineHeight    = '';
+      gameTitle.style.verticalAlign = '';
+    }
+    if (tagsHead) {
+      tagsHead.style.display       = '';
+      tagsHead.style.lineHeight    = '';
+      tagsHead.style.verticalAlign = '';
     }
     tagEls.forEach(t => {
-      t.style.whiteSpace = '';
-      t.style.width      = '';
-      t.style.minWidth   = '';
-      t.style.overflow   = '';
+      t.style.display        = '';
+      t.style.alignItems     = '';
+      t.style.whiteSpace     = '';
+      t.style.width          = '';
+      t.style.minWidth       = '';
+      t.style.overflow       = '';
+      t.style.lineHeight     = '';
+      t.style.verticalAlign  = '';
     });
     btn.disabled = false;
     btn.innerHTML = 'PNG 저장';
