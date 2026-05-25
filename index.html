@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Steam 게임 페이지 메이커</title>
+<title>스팀 메이커</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -687,10 +687,14 @@ function closeCrop(){
   document.getElementById('cropModal').classList.add('hidden');
 }
 
+const imgCache = {}; // target → dataURL 캐시
+
 function applyCrop(){
   if(!cropper) return;
   const c = cropper.getCroppedCanvas({maxWidth:1920,maxHeight:1080,imageSmoothingQuality:'high'});
-  placeImg(upTarget, c.toDataURL('image/jpeg',.92));
+  const dataUrl = c.toDataURL('image/jpeg',.92);
+  imgCache[upTarget] = dataUrl;
+  placeImg(upTarget, dataUrl);
   closeCrop();
 }
 
@@ -756,18 +760,27 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     t.style.overflow   = 'hidden';
   });
 
-  // 페이지 내 모든 이미지 로드 완료 대기
-  await Promise.all([...page.querySelectorAll('img')].filter(i=>!i.classList.contains('hidden')&&i.src).map(i=>
-    i.complete ? Promise.resolve() : new Promise(r=>{i.onload=r;i.onerror=r;})
-  ));
-  await new Promise(r => setTimeout(r, 120));
+  // 캐시된 dataURL을 img에 다시 심어서 모바일 렌더링 보장
+  const imgMap = {
+    hero: 'heroImg', capsule: 'capsuleImg',
+    t0:'ti0', t1:'ti1', t2:'ti2', t3:'ti3', t4:'ti4'
+  };
+  for(const [target, dataUrl] of Object.entries(imgCache)){
+    const el = document.getElementById(imgMap[target]);
+    if(el) { el.src = dataUrl; }
+  }
+  // 모든 이미지 완전 로드 대기
+  await Promise.all([...page.querySelectorAll('img')]
+    .filter(i => !i.classList.contains('hidden') && i.src && !i.src.startsWith('data:image/gif'))
+    .map(i => i.complete ? Promise.resolve() : new Promise(r => { i.onload = r; i.onerror = r; }))
+  );
+  await new Promise(r => setTimeout(r, 150));
 
   try {
     const W = page.offsetWidth;
     const H = page.offsetHeight;
     const scale = Math.max(window.devicePixelRatio || 1, 2);
-    // 두 번 렌더링해서 첫 번째가 검정이면 두 번째로 대체 (모바일 타이밍 버그 대응)
-    let dataUrl = await domtoimage.toPng(page, {
+    const dataUrl = await domtoimage.toPng(page, {
       width:  W * scale,
       height: H * scale,
       bgcolor: '#1b2838',
@@ -780,38 +793,10 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       filter: node => {
         if (node.id === 'btnAddTag') return false;
         if (node.classList?.contains('ov')) return false;
+        if (node.id === 'creditColor') return false;
         return true;
       },
     });
-    // 검정 화면 감지: canvas에 그려서 픽셀 샘플링
-    const testCanvas = document.createElement('canvas');
-    testCanvas.width = 10; testCanvas.height = 10;
-    const ctx = testCanvas.getContext('2d');
-    const testImg = new Image();
-    await new Promise(r=>{testImg.onload=r; testImg.src=dataUrl;});
-    ctx.drawImage(testImg,0,0,10,10);
-    const px = ctx.getImageData(0,0,10,10).data;
-    const avg = Array.from(px).filter((_,i)=>i%4!==3).reduce((a,b)=>a+b,0)/30;
-    if(avg < 5) {
-      // 검정으로 판단 → 재시도
-      await new Promise(r => setTimeout(r, 200));
-      dataUrl = await domtoimage.toPng(page, {
-        width:  W * scale,
-        height: H * scale,
-        bgcolor: '#1b2838',
-        style: {
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          width:  W + 'px',
-          height: H + 'px',
-        },
-        filter: node => {
-          if (node.id === 'btnAddTag') return false;
-          if (node.classList?.contains('ov')) return false;
-          return true;
-        },
-      });
-    }
 
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isIOS) {
