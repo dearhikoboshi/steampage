@@ -411,6 +411,20 @@ button{cursor:pointer;font-family:inherit;}
   .thumb{min-width:60px;}
 }
 
+.save-modal{
+  display:none;position:fixed;inset:0;z-index:600;
+  background:rgba(0,0,0,.92);
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;gap:14px;
+}
+.save-modal.on{display:flex;}
+.save-modal img{max-width:100%;max-height:70vh;border-radius:4px;display:block;}
+.save-modal p{color:#fff;font-size:13px;font-family:inherit;text-align:center;line-height:1.6;}
+.save-modal-close{
+  background:rgba(76,107,130,.5);border:1px solid #4c6b82;
+  color:#fff;padding:8px 24px;border-radius:3px;
+  font-size:13px;font-family:inherit;cursor:pointer;
+}
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
@@ -423,11 +437,7 @@ button{cursor:pointer;font-family:inherit;}
   <div class="tb-logo">
     <span>스팀 페이지 메이커</span>
   </div>
-  <div class="tb-tips">
-    <div class="tip"><kbd>이미지</kbd> 클릭하여 업로드·크롭</div>
-    <div class="tip"><kbd>텍스트</kbd> 클릭하여 편집</div>
-    <div class="tip"><kbd>태그</kbd> 더블클릭으로 삭제</div>
-  </div>
+  <div class="tb-tips"></div>
   <div class="tb-acts">
     <button class="btn btn-ghost" id="btnReset">초기화</button>
     <button class="btn btn-blue" id="btnSave">PNG 저장</button>
@@ -557,6 +567,13 @@ button{cursor:pointer;font-family:inherit;}
 </div>
 
 <input type="file" id="fileInput" accept="image/*" style="display:none">
+
+<!-- 모바일 저장 모달 -->
+<div class="save-modal" id="saveModal">
+  <img id="saveModalImg" src="" alt="저장 이미지">
+  <p>이미지를 <strong>길게 눌러</strong> 저장하세요</p>
+  <button class="save-modal-close" id="saveModalClose">닫기</button>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@3.4.1/dist/dom-to-image-more.min.js"></script>
@@ -764,15 +781,9 @@ document.getElementById('btnSave').addEventListener('click', async () => {
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) {
-      // 모바일: 새 탭에서 이미지 열기 → 길게 눌러서 저장
-      const w = window.open('', '_blank');
-      w.document.write(`<html><body style="margin:0;background:#000">
-        <img src="${dataUrl}" style="max-width:100%;display:block">
-        <p style="color:#fff;font-family:sans-serif;font-size:13px;text-align:center;padding:10px">
-          이미지를 길게 눌러 저장하세요
-        </p>
-      </body></html>`);
-      w.document.close();
+      const modal = document.getElementById('saveModal');
+      document.getElementById('saveModalImg').src = dataUrl;
+      modal.classList.add('on');
     } else {
       const a = document.createElement('a');
       a.download = `steam-page-${new Date().toISOString().slice(0, 10)}.png`;
@@ -818,6 +829,12 @@ document.querySelectorAll('.game-title,.bc-item,.mv').forEach(el=>{
   el.addEventListener('keydown',e=>{
     if(e.key==='Enter'){e.preventDefault();el.blur();}
   });
+});
+
+/* ── SAVE MODAL ── */
+document.getElementById('saveModalClose').addEventListener('click', () => {
+  document.getElementById('saveModal').classList.remove('on');
+  document.getElementById('saveModalImg').src = '';
 });
 
 /* ── CREDIT COLOR ── */
