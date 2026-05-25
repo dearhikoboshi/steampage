@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steam 게임 페이지 메이커</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  --bg:#1b2838;
+  --bg-dark:#16202d;
+  --bg-body:#0d1520;
+  --blue:#66c0f4;
+  --text:#c6d4df;
+  --text-dim:#8f98a0;
+  --text-bright:#e8f0f5;
+  --border:#4c6b82;
+  --tag-bg:#3d6278;
+  --tag-bd:#4c7a91;
+}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR","Segoe UI",Arial,sans-serif;
+  background:var(--bg-body);
+  min-height:100vh;
+  color:var(--text);
+}
+
+img{display:block;}
+button{cursor:pointer;font-family:inherit;}
+[contenteditable]{outline:none;}
+.hidden{display:none!important;}
+
+/* ── TOOLBAR ── */
+.toolbar{
+  position:sticky;top:0;z-index:300;
+  background:rgba(10,16,26,.97);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(76,107,130,.5);
+  padding:0 20px;
+  height:54px;
+  display:flex;align-items:center;gap:14px;
+}
+
+.tb-logo{
+  display:flex;align-items:center;gap:8px;
+  font-size:14px;font-weight:700;color:var(--blue);
+  white-space:nowrap;flex-shrink:0;
+}
+.tb-logo .ico{width:18px;height:18px;flex-shrink:0;}
+
+.tb-tips{
+  flex:1;
+  display:flex;align-items:center;justify-content:center;
+  gap:18px;overflow:hidden;
+}
+.tip{
+  display:flex;align-items:center;gap:5px;
+  font-size:11.5px;color:var(--text-dim);white-space:nowrap;
+}
+.tip kbd{
+  background:rgba(102,192,244,.1);
+  border:1px solid rgba(102,192,244,.28);
+  color:var(--blue);
+  padding:1px 7px;border-radius:3px;
+  font-size:10.5px;font-weight:600;font-family:inherit;
+}
+
+.tb-acts{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  -webkit-appearance:none;appearance:none;
+  height:32px;padding:0 16px;border-radius:3px;border:none;
+  font-family:inherit;font-size:12.5px;font-weight:600;
+  letter-spacing:.01em;
+  transition:filter .15s,opacity .15s;
+  white-space:nowrap;
+}
+.btn:disabled{opacity:.5;cursor:not-allowed;pointer-events:none;}
+
+.btn-ghost{
+  background:rgba(76,107,130,.3);
+  border:1px solid rgba(76,107,130,.55);
+  color:var(--text);
+}
+.btn-ghost:hover{filter:brightness(1.25);}
+
+.btn-blue{
+  background:linear-gradient(180deg,#7dc5ec 0%,#4b90ba 100%);
+  color:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.35);
+}
+.btn-blue:hover{filter:brightness(1.1);}
+
+/* ── OUTER WRAPPER ── */
+.outer{max-width:1020px;margin:24px auto 64px;padding:0 16px;}
+
+/* ── STEAM PAGE ── */
+#steamPage{
+  background:var(--bg);
+  padding:16px 16px 26px;
+  border-radius:3px;
+}
+
+/* breadcrumb */
+.bc{
+  font-size:11px;color:var(--text-dim);
+  margin-bottom:10px;
+  display:flex;align-items:center;flex-wrap:wrap;
+}
+.bc-sep{margin:0 4px;}
+.bc-item[contenteditable]{color:var(--blue);}
+
+/* title row */
+.title-row{
+  display:flex;align-items:flex-start;
+  justify-content:space-between;gap:16px;
+  margin-bottom:14px;
+}
+.game-title{
+  font-size:clamp(15px,2.4vw,22px);
+  font-weight:700;color:var(--text-bright);
+  letter-spacing:-.3px;line-height:1.25;
+  flex:1;min-width:0;
+}
+.hub-btn{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  white-space:nowrap;
+  overflow:hidden;
+  max-width:none;
+  background:linear-gradient(180deg,#5b7c8b 5%,#3d5a6b 100%);
+  border:1px solid #6a8fa3;
+  color:#c5d5e0;
+  padding:6px 14px;border-radius:3px;
+  font-size:12px;font-weight:600;
+  cursor:pointer;
+  transition:filter .15s;
+}
+.hub-btn:hover{filter:brightness(1.15);}
+
+/* grid */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 300px;
+  gap:14px;align-items:start;
+}
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr;}
+  .media-col{display:none!important;}
+  .sidebar{display:flex;flex-direction:column;gap:12px;}
+}
+
+/* ── MEDIA COLUMN ── */
+.media-col{display:flex;flex-direction:column;gap:8px;}
+
+/* hero — padding-bottom hack (aspect-ratio 대신, html2canvas 호환) */
+.hero-box{
+  position:relative;width:100%;
+  height:0;padding-bottom:56.25%; /* 16:9 */
+  border-radius:2px;overflow:hidden;
+  background:var(--bg-dark);cursor:pointer;
+}
+.hero-box:hover .ov{opacity:1;}
+
+.hero-ph{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(135deg,#0f1e2e,#1a3045);
+  pointer-events:none;z-index:1;
+}
+.hero-ph .ph-ico{width:40px;height:40px;color:var(--text-dim);}
+.hero-ph .ph-ico svg{width:100%;height:100%;}
+.hero-ph .ph-t{font-size:13px;font-weight:600;color:var(--text);}
+.hero-ph .ph-s{font-size:11px;color:var(--text-dim);}
+.cap-ph .ph-ico{width:30px;height:30px;color:var(--text-dim);}
+.cap-ph .ph-ico svg{width:100%;height:100%;}
+.ov{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.52);
+  display:flex;align-items:center;justify-content:center;
+  gap:6px;font-size:13px;font-weight:600;color:#fff;
+  opacity:0;transition:opacity .2s;
+  z-index:5;pointer-events:none;
+}
+.ov .ov-ico{font-size:22px;}
+
+#heroImg{
+  position:absolute;inset:0;
+  width:100%;height:100%;object-fit:cover;z-index:2;
+}
+
+/* thumbs — grid로 hero 너비에 딱 맞게 */
+.thumbs{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:6px;
+}
+
+.thumb{
+  position:relative;width:100%;
+  height:0;padding-bottom:56.25%; /* 16:9 */
+  border-radius:2px;overflow:hidden;
+  background:var(--bg-dark);cursor:pointer;
+  border:2px solid transparent;
+  transition:border-color .15s;
+}
+.thumb:hover{border-color:rgba(102,192,244,.55);}
+.thumb.sel{border-color:var(--blue);}
+.thumb:hover .ov{opacity:1;}
+.thumb-ph{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-dim);font-size:18px;z-index:3;
+  pointer-events:none;
+}
+.thumb img{
+  position:absolute;inset:0;
+  width:100%;height:100%;object-fit:cover;z-index:2;
+}
+
+/* ── SIDEBAR ── */
+.sidebar{display:flex;flex-direction:column;gap:12px;}
+
+/* capsule — padding-bottom hack */
+.cap-box{
+  position:relative;width:100%;
+  height:0;padding-bottom:46.74%; /* 215/460 */
+  border-radius:2px;overflow:hidden;
+  background:var(--bg-dark);cursor:pointer;
+}
+.cap-box:hover .ov{opacity:1;}
+.cap-ph{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;
+  background:linear-gradient(135deg,#0f1e2e,#162c3e);
+  pointer-events:none;z-index:1;
+}
+.cap-ph .ph-ico{font-size:28px;}
+.cap-ph .ph-t{font-size:12px;font-weight:600;color:var(--text);}
+.cap-ph .ph-s{font-size:10px;color:var(--text-dim);}
+#capsuleImg{
+  position:absolute;inset:0;
+  width:100%;height:100%;object-fit:cover;z-index:2;
+}
+
+/* desc */
+.desc-field{
+  font-size:12.5px;line-height:1.65;
+  color:var(--text);min-height:70px;
+}
+
+/* meta */
+.meta{
+  display:flex;flex-direction:column;gap:6px;
+  border-top:1px solid rgba(76,107,130,.35);
+  padding-top:10px;
+}
+.meta-row{
+  display:grid;grid-template-columns:100px 1fr;
+  gap:4px;font-size:12px;align-items:baseline;
+}
+.ml{color:var(--text-dim);}
+.mv{color:var(--text);}
+.mv.lnk{color:var(--blue);}
+
+/* tags */
+.tags-area{display:flex;flex-direction:column;gap:6px;}
+.tags-head{font-size:11px;color:var(--text-dim);}
+.tags-list{display:flex;flex-wrap:wrap;gap:5px;}
+.tag{
+  display:inline-flex;
+  align-items:center;
+  background:var(--tag-bg);
+  border:1px solid var(--tag-bd);
+  color:var(--text);
+  padding:4px 10px;border-radius:2px;
+  font-size:11.5px;font-family:inherit;
+  white-space:nowrap;
+  overflow:hidden;
+  cursor:text;min-width:10px;
+  transition:border-color .15s;
+}
+.tag:hover{border-color:rgba(102,192,244,.5);}
+.tag:focus{border-color:var(--blue);}
+.btn-add-tag{
+  display:inline-block;
+  background:transparent;
+  border:1px dashed rgba(76,107,130,.65);
+  color:var(--text-dim);
+  padding:3px 10px;border-radius:2px;
+  font-size:11px;font-family:inherit;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:all .15s;width:fit-content;
+}
+.btn-add-tag:hover{border-color:var(--blue);color:var(--blue);}
+
+/* ── EDITABLES ── */
+.editable{
+  border-radius:2px;
+  transition:background .15s,box-shadow .15s;
+  cursor:text;
+  /* NO padding/margin offset — causes html2canvas text shift */
+}
+.editable:hover{
+  background:rgba(102,192,244,.07);
+  box-shadow:0 0 0 2px rgba(102,192,244,.2);
+}
+.editable:focus{
+  background:rgba(102,192,244,.1);
+  box-shadow:0 0 0 2px rgba(102,192,244,.42);
+}
+[data-ph]:empty::before{
+  content:attr(data-ph);
+  display:block;
+  color:rgba(143,152,160,.55);
+  font-style:italic;pointer-events:none;
+}
+
+/* ── CROP MODAL ── */
+.modal-bg{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.9);
+  z-index:500;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+.modal-bg.hidden{display:none!important;}
+.modal-box{
+  background:#182638;
+  border:1px solid var(--border);
+  border-radius:6px;
+  width:100%;max-width:840px;
+  max-height:calc(100vh - 40px);
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,.65);
+  animation:modalIn .18s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;
+  border-bottom:1px solid rgba(76,107,130,.4);
+  flex-shrink:0;
+}
+.modal-head h3{font-size:15px;font-weight:700;color:var(--text-bright);}
+.modal-x{
+  background:none;border:none;
+  color:var(--text-dim);font-size:20px;line-height:1;
+  padding:2px 6px;border-radius:3px;
+  transition:color .15s,background .15s;
+}
+.modal-x:hover{color:#fff;background:rgba(255,255,255,.08);}
+.crop-area{
+  flex:1;background:#040b10;overflow:hidden;
+  min-height:200px;
+  max-height:calc(100vh - 155px);
+  display:flex;align-items:center;justify-content:center;
+}
+.crop-area img{display:block;max-width:100%;}
+.modal-foot{
+  display:flex;justify-content:flex-end;gap:8px;
+  padding:12px 18px;
+  border-top:1px solid rgba(76,107,130,.4);
+  flex-shrink:0;
+}
+
+/* ── MOBILE ── */
+@media(max-width:580px){
+  .toolbar{padding:0 12px;gap:8px;}
+  .tb-tips{display:none;}
+  .tb-logo span:not(.ico){display:none;}
+  .btn{padding:6px 12px;font-size:12px;}
+  #steamPage{padding:12px 10px 20px;}
+  .game-title{font-size:15px;}
+  .hub-btn{font-size:11px;padding:5px 10px;}
+  .meta-row{grid-template-columns:82px 1fr;font-size:11.5px;}
+  .thumb{min-width:60px;}
+}
+
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- ══════════ TOOLBAR ══════════ -->
+<div class="toolbar">
+  <div class="tb-logo">
+    <span>스팀 페이지 메이커</span>
+  </div>
+  <div class="tb-tips">
+    <div class="tip"><kbd>이미지</kbd> 클릭하여 업로드·크롭</div>
+    <div class="tip"><kbd>텍스트</kbd> 클릭하여 편집</div>
+    <div class="tip"><kbd>태그</kbd> 더블클릭으로 삭제</div>
+  </div>
+  <div class="tb-acts">
+    <button class="btn btn-ghost" id="btnReset">초기화</button>
+    <button class="btn btn-blue" id="btnSave">PNG 저장</button>
+  </div>
+</div>
+
+<!-- ══════════ STEAM PAGE ══════════ -->
+<div class="outer">
+<div id="steamPage">
+
+  <!-- Breadcrumb -->
+  <div class="bc">
+    <span>모든 게임</span>
+    <span class="bc-sep">&gt;</span>
+    <span class="bc-item editable" contenteditable="true" data-ph="카테고리"></span>
+    <span class="bc-sep">&gt;</span>
+    <span class="bc-item editable" contenteditable="true" data-ph="프랜차이즈"></span>
+    <span class="bc-sep">&gt;</span>
+    <span class="bc-item editable" contenteditable="true" data-ph="게임 이름"></span>
+  </div>
+
+  <!-- Title Row -->
+  <div class="title-row">
+    <h1 class="game-title editable" contenteditable="true" data-ph="게임 제목 입력"></h1>
+    <span class="hub-btn">커뮤니티 허브</span>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="grid">
+
+    <!-- LEFT -->
+    <div class="media-col">
+
+      <!-- Hero -->
+      <div class="hero-box" id="heroBox" onclick="startUp('hero')" title="메인 이미지 업로드">
+        <div class="hero-ph" id="heroPh">
+          <div class="ph-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="5" width="20" height="15" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>
+          </div>
+          <div class="ph-t">메인 스크린샷 업로드</div>
+          <div class="ph-s">클릭 후 16:9 비율로 크롭</div>
+        </div>
+        <div class="ov">이미지 변경</div>
+        <img id="heroImg" class="hidden" src="" alt="hero">
+      </div>
+
+      <!-- Thumbnails (built by JS) -->
+      <div class="thumbs" id="thumbsRow"></div>
+
+    </div>
+
+    <!-- RIGHT / SIDEBAR -->
+    <div class="sidebar">
+
+      <!-- Capsule Art -->
+      <div class="cap-box" onclick="startUp('capsule')" title="썸네일 업로드">
+        <div class="cap-ph" id="capPh">
+          <div class="ph-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+          </div>
+          <div class="ph-t">썸네일 업로드</div>
+          <div class="ph-s">460 × 215 추천</div>
+        </div>
+        <div class="ov">이미지 변경</div>
+        <img id="capsuleImg" class="hidden" src="" alt="capsule">
+      </div>
+
+      <!-- Description -->
+      <div class="desc-field editable" contenteditable="true" data-ph="게임 설명을 입력하세요..."></div>
+
+      <!-- Meta -->
+      <div class="meta">
+        <div class="meta-row">
+          <span class="ml">최근 평가:</span>
+          <span class="mv lnk editable" contenteditable="true" data-ph="평가"></span>
+        </div>
+        <div class="meta-row">
+          <span class="ml">한국어 평가:</span>
+          <span class="mv lnk editable" contenteditable="true" data-ph="평가"></span>
+        </div>
+        <div class="meta-row">
+          <span class="ml">출시일:</span>
+          <span class="mv editable" contenteditable="true" data-ph="출시일"></span>
+        </div>
+        <div class="meta-row">
+          <span class="ml">개발자:</span>
+          <span class="mv lnk editable" contenteditable="true" data-ph="개발사"></span>
+        </div>
+        <div class="meta-row">
+          <span class="ml">배급사:</span>
+          <span class="mv lnk editable" contenteditable="true" data-ph="배급사"></span>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="tags-area">
+        <div class="tags-head">이 제품의 인기 태그:</div>
+        <div class="tags-list" id="tagsList"></div>
+        <span class="btn-add-tag" id="btnAddTag" role="button">+ 태그 추가</span>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- #steamPage -->
+</div><!-- .outer -->
+
+<!-- ══════════ CROP MODAL ══════════ -->
+<div class="modal-bg hidden" id="cropModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>이미지 크롭</h3>
+      <button class="modal-x" id="btnModalX">&#x2715;</button>
+    </div>
+    <div class="crop-area">
+      <img id="cropSrc" src="" alt="crop">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="btnCropCancel">취소</button>
+      <button class="btn btn-blue" id="btnCropApply">적용</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@3.4.1/dist/dom-to-image-more.min.js"></script>
+<script>
+'use strict';
+
+/* ── CONFIG ── */
+const THUMB_N = 5;
+const RATIOS = {
+  hero: 16/9,
+  capsule: 460/215,
+};
+for(let i=0;i<THUMB_N;i++) RATIOS[`t${i}`]=16/9;
+
+const DEFAULT_TAGS = ['태그'];
+
+/* ── STATE ── */
+let upTarget = null;
+let cropper = null;
+
+/* ── BUILD THUMBS ── */
+(function buildThumbs(){
+  const row = document.getElementById('thumbsRow');
+  for(let i=0;i<THUMB_N;i++){
+    const d = document.createElement('div');
+    d.className = 'thumb' + (i===0?' sel':'');
+    d.id = 'th'+i;
+    d.title = '썸네일 업로드';
+    d.onclick = ()=>startUp('t'+i);
+    d.innerHTML = `
+      <div class="thumb-ph" id="tph${i}">${i===0?'<svg width="18" height="18" viewBox="0 0 24 24" fill="#8f98a0" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>':''}</div>
+      <div class="ov"></div>
+      <img id="ti${i}" class="hidden" src="" alt="">
+    `;
+    row.appendChild(d);
+  }
+})();
+
+/* ── BUILD TAGS ── */
+function buildTags(){
+  const list = document.getElementById('tagsList');
+  DEFAULT_TAGS.forEach(t=>list.appendChild(mkTag(t)));
+}
+
+function mkTag(txt){
+  const el = document.createElement('span');
+  el.className = 'tag';
+  el.contentEditable = 'true';
+  el.textContent = txt;
+  el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();el.blur();}
+    if(e.key==='Backspace'&&el.textContent.trim()===''){e.preventDefault();el.remove();}
+  });
+  el.addEventListener('dblclick',()=>{
+    if(confirm(`"${el.textContent}" 태그를 삭제하시겠습니까?`)) el.remove();
+  });
+  return el;
+}
+
+document.getElementById('btnAddTag').addEventListener('click',()=>{
+  const list = document.getElementById('tagsList');
+  const tag = mkTag('새 태그');
+  list.appendChild(tag);
+  tag.focus();
+  const r=document.createRange(); r.selectNodeContents(tag);
+  const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+});
+
+/* ── UPLOAD ── */
+function startUp(target){
+  upTarget = target;
+  const fi = document.getElementById('fileInput');
+  fi.value='';
+  fi.click();
+}
+
+document.getElementById('fileInput').addEventListener('change',function(){
+  const f = this.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = e=>openCrop(e.target.result);
+  r.readAsDataURL(f);
+});
+
+/* ── CROP ── */
+function openCrop(src){
+  const modal = document.getElementById('cropModal');
+  const img = document.getElementById('cropSrc');
+  if(cropper){cropper.destroy();cropper=null;}
+  img.src='';
+  modal.classList.remove('hidden');
+  img.onload=()=>{
+    cropper = new Cropper(img,{
+      aspectRatio: RATIOS[upTarget]??NaN,
+      viewMode:2,
+      autoCropArea:.85,
+      background:false,
+      movable:true,
+      zoomable:true,
+      rotatable:false,
+      guides:true,
+    });
+  };
+  img.src = src;
+}
+
+function closeCrop(){
+  if(cropper){cropper.destroy();cropper=null;}
+  const img=document.getElementById('cropSrc');
+  img.src=''; img.onload=null;
+  document.getElementById('cropModal').classList.add('hidden');
+}
+
+function applyCrop(){
+  if(!cropper) return;
+  const c = cropper.getCroppedCanvas({maxWidth:1920,maxHeight:1080,imageSmoothingQuality:'high'});
+  placeImg(upTarget, c.toDataURL('image/jpeg',.92));
+  closeCrop();
+}
+
+function placeImg(target, url){
+  if(target==='hero'){
+    set('heroImg','heroPh',url);
+  } else if(target==='capsule'){
+    set('capsuleImg','capPh',url);
+  } else if(target.startsWith('t')){
+    const i=target.slice(1);
+    set('ti'+i,'tph'+i,url);
+    document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('sel'));
+    document.getElementById('th'+i)?.classList.add('sel');
+  }
+}
+
+function set(imgId,phId,url){
+  const img=document.getElementById(imgId);
+  const ph=document.getElementById(phId);
+  if(img){img.src=url;img.classList.remove('hidden');}
+  if(ph){ph.classList.add('hidden');}
+}
+
+/* ── MODAL EVENTS ── */
+document.getElementById('btnCropApply').addEventListener('click',applyCrop);
+document.getElementById('btnCropCancel').addEventListener('click',closeCrop);
+document.getElementById('btnModalX').addEventListener('click',closeCrop);
+document.getElementById('cropModal').addEventListener('click',function(e){if(e.target===this)closeCrop();});
+
+/* ── SAVE ── */
+document.getElementById('btnSave').addEventListener('click', async () => {
+  const btn    = document.getElementById('btnSave');
+  const page   = document.getElementById('steamPage');
+  const addBtn = document.getElementById('btnAddTag');
+
+  btn.disabled = true;
+  btn.textContent = '저장 중...';
+  document.activeElement?.blur();
+
+  /* UI 전용 요소 숨기기 */
+  addBtn.style.display = 'none';
+  page.querySelectorAll('.ov').forEach(el => el.style.display = 'none');
+  page.querySelectorAll('.editable').forEach(el => {
+    el.style.background = 'transparent';
+    el.style.boxShadow  = 'none';
+  });
+
+  /* SVG foreignObject 안에서 white-space:nowrap이 CSS로 안 먹힘
+     → 인라인 스타일 + 픽셀 너비 고정으로 줄바꿈 원천 차단 */
+  const hubBtn = page.querySelector('.hub-btn');
+  const tagEls = [...page.querySelectorAll('.tag')];
+  if (hubBtn) {
+    hubBtn.style.whiteSpace = 'nowrap';
+    hubBtn.style.width      = hubBtn.offsetWidth + 'px';
+    hubBtn.style.minWidth   = hubBtn.offsetWidth + 'px';
+    hubBtn.style.overflow   = 'hidden';
+  }
+  tagEls.forEach(t => {
+    t.style.whiteSpace = 'nowrap';
+    t.style.width      = t.offsetWidth + 'px';
+    t.style.minWidth   = t.offsetWidth + 'px';
+    t.style.overflow   = 'hidden';
+  });
+
+  await new Promise(r => setTimeout(r, 80));
+
+  try {
+    const W = page.offsetWidth;
+    const H = page.offsetHeight;
+    const scale = Math.max(window.devicePixelRatio || 1, 2);
+    const dataUrl = await domtoimage.toPng(page, {
+      width:  W * scale,
+      height: H * scale,
+      bgcolor: '#1b2838',
+      style: {
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+        width:  W + 'px',
+        height: H + 'px',
+      },
+      filter: node => {
+        if (node.id === 'btnAddTag') return false;
+        if (node.classList?.contains('ov')) return false;
+        return true;
+      },
+    });
+
+    const a = document.createElement('a');
+    a.download = `steam-page-${new Date().toISOString().slice(0, 10)}.png`;
+    a.href = dataUrl;
+    a.click();
+
+  } catch (err) {
+    console.error(err);
+    alert('저장 오류: ' + (err?.message || String(err)));
+  } finally {
+    addBtn.style.display = '';
+    page.querySelectorAll('.ov').forEach(el => el.style.display = '');
+    page.querySelectorAll('.editable').forEach(el => {
+      el.style.background = '';
+      el.style.boxShadow  = '';
+    });
+    if (hubBtn) {
+      hubBtn.style.whiteSpace = '';
+      hubBtn.style.width      = '';
+      hubBtn.style.minWidth   = '';
+      hubBtn.style.overflow   = '';
+    }
+    tagEls.forEach(t => {
+      t.style.whiteSpace = '';
+      t.style.width      = '';
+      t.style.minWidth   = '';
+      t.style.overflow   = '';
+    });
+    btn.disabled = false;
+    btn.innerHTML = 'PNG 저장';
+  }
+});
+
+/* ── RESET ── */
+document.getElementById('btnReset').addEventListener('click',()=>{
+  if(confirm('모든 편집 내용이 초기화됩니다. 계속하시겠습니까?')) location.reload();
+});
+
+/* ── PREVENT ENTER in single-line fields ── */
+document.querySelectorAll('.game-title,.bc-item,.mv').forEach(el=>{
+  el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();el.blur();}
+  });
+});
+
+/* ── INIT ── */
+buildTags();
+</script>
+</body>
+</html>
