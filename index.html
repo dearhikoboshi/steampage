@@ -116,6 +116,31 @@ button{cursor:pointer;font-family:inherit;}
 .bc-item[contenteditable]{color:var(--blue);}
 
 /* title row */
+.credit-row{
+  display:flex;align-items:center;justify-content:flex-end;
+  gap:6px;margin-bottom:2px;
+}
+.credit-field{
+  font-size:11px;color:#fff;
+  text-align:left;
+  min-width:4px;
+  white-space:nowrap;
+  cursor:text;
+}
+.credit-field:empty::before{
+  content:'커미션주 이름';
+  color:rgba(255,255,255,.3);
+  font-style:italic;
+}
+.credit-color{
+  width:14px;height:14px;border-radius:2px;
+  border:1px solid rgba(255,255,255,.3);
+  padding:0;cursor:pointer;
+  background:none;flex-shrink:0;
+  overflow:hidden;
+}
+.credit-color::-webkit-color-swatch-wrapper{padding:0;}
+.credit-color::-webkit-color-swatch{border:none;}
 .title-row{
   display:flex;align-items:flex-start;
   justify-content:space-between;gap:16px;
@@ -380,7 +405,7 @@ button{cursor:pointer;font-family:inherit;}
   .tb-logo span:not(.ico){display:none;}
   .btn{padding:6px 12px;font-size:12px;}
   #steamPage{padding:12px 10px 20px;}
-  .game-title{font-size:15px;}
+  .game-title{font-size:clamp(18px,5vw,26px);}
   .hub-btn{font-size:11px;padding:5px 10px;}
   .meta-row{grid-template-columns:82px 1fr;font-size:11.5px;}
   .thumb{min-width:60px;}
@@ -412,6 +437,12 @@ button{cursor:pointer;font-family:inherit;}
 <!-- ══════════ STEAM PAGE ══════════ -->
 <div class="outer">
 <div id="steamPage">
+
+  <!-- Credit Row -->
+  <div class="credit-row">
+    <span class="credit-field" id="creditField" contenteditable="true"></span>
+    <input type="color" class="credit-color" id="creditColor" value="#ffffff" title="글자 색 변경">
+  </div>
 
   <!-- Breadcrumb -->
   <div class="bc">
@@ -655,17 +686,17 @@ function placeImg(target, url){
     set('capsuleImg','capPh',url);
   } else if(target.startsWith('t')){
     const i=target.slice(1);
-    set('ti'+i,'tph'+i,url);
+    set('ti'+i,'tph'+i,url,true);
     document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('sel'));
     document.getElementById('th'+i)?.classList.add('sel');
   }
 }
 
-function set(imgId,phId,url){
+function set(imgId,phId,url,keepPh){
   const img=document.getElementById(imgId);
   const ph=document.getElementById(phId);
   if(img){img.src=url;img.classList.remove('hidden');}
-  if(ph){ph.classList.add('hidden');}
+  if(ph&&!keepPh){ph.classList.add('hidden');}
 }
 
 /* ── MODAL EVENTS ── */
@@ -686,6 +717,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
 
   /* UI 전용 요소 숨기기 */
   addBtn.style.display = 'none';
+  document.getElementById('creditColor').style.display = 'none';
   page.querySelectorAll('.ov').forEach(el => el.style.display = 'none');
   page.querySelectorAll('.editable').forEach(el => {
     el.style.background = 'transparent';
@@ -742,6 +774,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     alert('저장 오류: ' + (err?.message || String(err)));
   } finally {
     addBtn.style.display = '';
+    document.getElementById('creditColor').style.display = '';
     page.querySelectorAll('.ov').forEach(el => el.style.display = '');
     page.querySelectorAll('.editable').forEach(el => {
       el.style.background = '';
@@ -774,6 +807,11 @@ document.querySelectorAll('.game-title,.bc-item,.mv').forEach(el=>{
   el.addEventListener('keydown',e=>{
     if(e.key==='Enter'){e.preventDefault();el.blur();}
   });
+});
+
+/* ── CREDIT COLOR ── */
+document.getElementById('creditColor').addEventListener('input', function(){
+  document.getElementById('creditField').style.color = this.value;
 });
 
 /* ── INIT ── */
