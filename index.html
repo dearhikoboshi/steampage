@@ -779,12 +779,14 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       },
     });
 
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isIOS) {
+      // iOS: a.download 미지원 → 모달로 길게 눌러 저장
       const modal = document.getElementById('saveModal');
       document.getElementById('saveModalImg').src = dataUrl;
       modal.classList.add('on');
     } else {
+      // PC + Android: 바로 다운로드
       const a = document.createElement('a');
       a.download = `steam-page-${new Date().toISOString().slice(0, 10)}.png`;
       a.href = dataUrl;
