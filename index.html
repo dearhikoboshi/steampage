@@ -428,6 +428,133 @@ button{cursor:pointer;font-family:inherit;}
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── SIMILAR GAMES SECTION ── */
+.similar-section{
+  border-top:1px solid rgba(76,107,130,.3);
+  padding-top:14px;
+  margin-top:18px;
+}
+.similar-header{
+  position:relative;
+  display:flex;align-items:center;
+  gap:8px;flex-wrap:nowrap;
+  margin-bottom:10px;
+  min-height:26px;
+}
+.similar-title{
+  font-size:12px;font-weight:600;
+  color:var(--text-dim);
+  text-transform:uppercase;letter-spacing:.04em;
+  flex:1;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding-right:80px;
+}
+.similar-viewall{
+  position:absolute;right:0;top:50%;transform:translateY(-50%);
+  background:linear-gradient(180deg,#5b7c8b 5%,#3d5a6b 100%);
+  border:1px solid #6a8fa3;
+  color:#c5d5e0;
+  padding:4px 12px;border-radius:3px;
+  font-size:11px;font-weight:600;font-family:inherit;
+  cursor:default;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.similar-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+.sim-card{display:flex;flex-direction:column;}
+.sim-cap{
+  position:relative;width:100%;
+  height:0;padding-bottom:47%;
+  border-radius:4px;overflow:hidden;
+  background:var(--bg-dark);cursor:pointer;
+}
+.sim-cap:hover .ov{opacity:1;}
+.sim-cap-ph{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-dim);font-size:13px;z-index:1;
+  pointer-events:none;
+  background:linear-gradient(135deg,#0f1e2e,#162c3e);
+}
+.sim-cap img{
+  position:absolute;inset:0;
+  width:100%;height:100%;object-fit:cover;z-index:2;
+}
+/* 게임 제목 오버레이 */
+.sim-price-overlay{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(to top, rgba(0,0,0,.80) 0%, rgba(0,0,0,.55) 70%, transparent 100%);
+  padding:22px 10px 8px;
+  text-align:left;
+  z-index:4;
+  pointer-events:none;
+}
+.sim-price{
+  font-size:12px;font-weight:700;
+  color:#fff;
+  font-family:inherit;
+  cursor:text;
+  pointer-events:all;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;
+}
+.sim-name{display:none;}
+
+/* PC only: toggle button + similar section visible */
+@media(max-width:900px){
+  #btnToggleSimilar{display:none!important;}
+  .similar-section{display:none!important;}
+  #simPricePanel{display:none!important;}
+}
+
+/* ── PRICE PANEL ── */
+#simPricePanel{
+  background:rgba(22,32,45,.95);
+  border:1px solid rgba(76,107,130,.4);
+  border-radius:4px;
+  padding:10px 14px;
+  margin-top:8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.sim-panel-label{
+  font-size:11.5px;color:var(--text-dim);
+  white-space:nowrap;flex-shrink:0;
+  font-weight:600;
+}
+.sim-panel-inputs{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;flex:1;
+}
+.sim-panel-item{
+  display:flex;flex-direction:column;gap:3px;
+}
+.sim-panel-item label{
+  font-size:10px;color:var(--text-dim);
+  text-align:center;
+}
+.sim-panel-item input{
+  background:rgba(13,21,32,.8);
+  border:1px solid rgba(76,107,130,.5);
+  border-radius:3px;
+  color:var(--text-bright);
+  font-size:12px;font-family:inherit;
+  padding:5px 8px;
+  text-align:center;
+  width:100%;
+  transition:border-color .15s;
+}
+.sim-panel-item input:focus{
+  outline:none;
+  border-color:var(--blue);
+}
 </style>
 </head>
 <body>
@@ -439,8 +566,9 @@ button{cursor:pointer;font-family:inherit;}
   </div>
   <div class="tb-tips"></div>
   <div class="tb-acts">
+    <button class="btn btn-ghost" id="btnToggleSimilar" title="비슷한 게임 더 보기 탭 토글">비슷한 게임 탭 숨기기</button>
     <button class="btn btn-ghost" id="btnReset">초기화</button>
-    <button class="btn btn-blue" id="btnSave">PNG 저장</button>
+    <button class="btn btn-blue" id="btnSave">저장하기</button>
   </div>
 </div>
 
@@ -546,7 +674,27 @@ button{cursor:pointer;font-family:inherit;}
     </div>
   </div>
 
+  <!-- Similar Games (PC only, toggleable) -->
+  <div id="similarSection" class="similar-section" style="display:none;">
+    <div class="similar-header">
+      <span class="similar-title">비슷한 게임 더 보기</span>
+      <button class="similar-viewall">전체 보기</button>
+    </div>
+    <div class="similar-grid" id="similarGrid">
+      <!-- built by JS -->
+    </div>
+  </div>
+
 </div><!-- #steamPage -->
+
+<!-- 가격 편집 패널 (steamPage 밖 → 저장 시 미포함) -->
+<div id="simPricePanel" style="display:none;">
+  <span class="sim-panel-label">🎮 제목 편집</span>
+  <div class="sim-panel-inputs" id="simPriceInputs">
+    <!-- built by JS -->
+  </div>
+</div>
+
 </div><!-- .outer -->
 
 <!-- ══════════ CROP MODAL ══════════ -->
@@ -593,6 +741,72 @@ const DEFAULT_TAGS = ['태그'];
 /* ── STATE ── */
 let upTarget = null;
 let cropper = null;
+
+/* ── BUILD SIMILAR GAMES ── */
+const SIM_N = 4;
+const SIM_DEFAULT_NAMES  = ['게임 이름', '게임 이름', '게임 이름', '게임 이름'];
+const SIM_DEFAULT_TITLES = ['게임 제목 1', '게임 제목 2', '게임 제목 3', '게임 제목 4'];
+
+(function buildSimilar(){
+  const grid = document.getElementById('similarGrid');
+  for(let i=0;i<SIM_N;i++){
+    const card = document.createElement('div');
+    card.className='sim-card';
+    card.innerHTML=`
+      <div class="sim-cap" id="simCap${i}" title="게임 이미지 업로드">
+        <div class="sim-cap-ph" id="simPh${i}">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 15l5-5 4 4 3-3 6 6"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+          </svg>
+        </div>
+        <div class="sim-price-overlay">
+          <span class="sim-price" id="simPrice${i}">${SIM_DEFAULT_TITLES[i]}</span>
+        </div>
+        <div class="ov">이미지 변경</div>
+        <img id="simImg${i}" class="hidden" src="" alt="sim${i}">
+      </div>
+    `;
+    card.querySelector('.sim-cap').addEventListener('click',()=>startUp('sim'+i));
+    grid.appendChild(card);
+  }
+  for(let i=0;i<SIM_N;i++) RATIOS['sim'+i]=2;
+
+  // 가격 패널 입력창 생성
+  const inputsWrap = document.getElementById('simPriceInputs');
+  for(let i=0;i<SIM_N;i++){
+    const item = document.createElement('div');
+    item.className = 'sim-panel-item';
+    item.innerHTML = `
+      <label>게임 ${i+1}</label>
+      <input type="text" id="simPriceInput${i}" value="${SIM_DEFAULT_TITLES[i]}" placeholder="게임 제목">
+    `;
+    inputsWrap.appendChild(item);
+    // 입력 시 오버레이 실시간 반영
+    item.querySelector('input').addEventListener('input', function(){
+      const span = document.getElementById('simPrice'+i);
+      if(span) span.textContent = this.value;
+    });
+  }
+})();
+
+/* ── SIMILAR TOGGLE ── */
+(function initToggle(){
+  const btn   = document.getElementById('btnToggleSimilar');
+  const sec   = document.getElementById('similarSection');
+  const panel = document.getElementById('simPricePanel');
+  let visible = false;
+  sec.style.display   = 'none';
+  panel.style.display = 'none';
+  btn.textContent = '비슷한 게임 탭 보이기';
+  btn.addEventListener('click',()=>{
+    visible = !visible;
+    sec.style.display   = visible ? '' : 'none';
+    panel.style.display = visible ? '' : 'none';
+    btn.textContent = visible ? '비슷한 게임 탭 숨기기' : '비슷한 게임 탭 보이기';
+  });
+})();
 
 /* ── BUILD THUMBS ── */
 (function buildThumbs(){
@@ -703,6 +917,9 @@ function placeImg(target, url){
     set('heroImg','heroPh',url);
   } else if(target==='capsule'){
     set('capsuleImg','capPh',url);
+  } else if(target.startsWith('sim')){
+    const i=target.slice(3);
+    set('simImg'+i,'simPh'+i,url,true);
   } else if(target.startsWith('t')){
     const i=target.slice(1);
     set('ti'+i,'tph'+i,url,true);
@@ -729,13 +946,18 @@ document.getElementById('btnSave').addEventListener('click', async () => {
   const btn    = document.getElementById('btnSave');
   const page   = document.getElementById('steamPage');
   const addBtn = document.getElementById('btnAddTag');
+  const toggleBtn = document.getElementById('btnToggleSimilar');
+  const pricePanel = document.getElementById('simPricePanel');
 
   btn.disabled = true;
   btn.textContent = '저장 중...';
   document.activeElement?.blur();
 
   /* UI 전용 요소 숨기기 */
+  const panelWasVisible = pricePanel && pricePanel.style.display !== 'none';
   addBtn.style.display = 'none';
+  if(toggleBtn) toggleBtn.style.display = 'none';
+  if(pricePanel) pricePanel.style.display = 'none';
   document.getElementById('creditColor').style.display = 'none';
   page.querySelectorAll('.ov').forEach(el => el.style.display = 'none');
   page.querySelectorAll('.editable').forEach(el => {
@@ -743,8 +965,6 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     el.style.boxShadow  = 'none';
   });
 
-  /* SVG foreignObject 안에서 white-space:nowrap이 CSS로 안 먹힘
-     → 인라인 스타일 + 픽셀 너비 고정으로 줄바꿈 원천 차단 */
   const hubBtn = page.querySelector('.hub-btn');
   const tagEls = [...page.querySelectorAll('.tag')];
   if (hubBtn) {
@@ -760,16 +980,15 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     t.style.overflow   = 'hidden';
   });
 
-  // 캐시된 dataURL을 img에 다시 심어서 모바일 렌더링 보장
   const imgMap = {
     hero: 'heroImg', capsule: 'capsuleImg',
-    t0:'ti0', t1:'ti1', t2:'ti2', t3:'ti3', t4:'ti4'
+    t0:'ti0', t1:'ti1', t2:'ti2', t3:'ti3', t4:'ti4',
+    sim0:'simImg0', sim1:'simImg1', sim2:'simImg2', sim3:'simImg3'
   };
   for(const [target, dataUrl] of Object.entries(imgCache)){
     const el = document.getElementById(imgMap[target]);
     if(el) { el.src = dataUrl; }
   }
-  // 모든 이미지 완전 로드 대기
   await Promise.all([...page.querySelectorAll('img')]
     .filter(i => !i.classList.contains('hidden') && i.src && !i.src.startsWith('data:image/gif'))
     .map(i => i.complete ? Promise.resolve() : new Promise(r => { i.onload = r; i.onerror = r; }))
@@ -794,18 +1013,17 @@ document.getElementById('btnSave').addEventListener('click', async () => {
         if (node.id === 'btnAddTag') return false;
         if (node.classList?.contains('ov')) return false;
         if (node.id === 'creditColor') return false;
+        if (node.id === 'btnToggleSimilar') return false;
         return true;
       },
     });
 
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isIOS) {
-      // iOS: a.download 미지원 → 모달로 길게 눌러 저장
       const modal = document.getElementById('saveModal');
       document.getElementById('saveModalImg').src = dataUrl;
       modal.classList.add('on');
     } else {
-      // PC + Android: 바로 다운로드
       const a = document.createElement('a');
       a.download = `steam-page-${new Date().toISOString().slice(0, 10)}.png`;
       a.href = dataUrl;
@@ -817,6 +1035,8 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     alert('저장 오류: ' + (err?.message || String(err)));
   } finally {
     addBtn.style.display = '';
+    if(toggleBtn) toggleBtn.style.display = '';
+    if(pricePanel) pricePanel.style.display = panelWasVisible ? '' : 'none';
     document.getElementById('creditColor').style.display = '';
     page.querySelectorAll('.ov').forEach(el => el.style.display = '');
     page.querySelectorAll('.editable').forEach(el => {
@@ -836,7 +1056,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       t.style.overflow   = '';
     });
     btn.disabled = false;
-    btn.innerHTML = 'PNG 저장';
+    btn.innerHTML = '저장하기';
   }
 });
 
