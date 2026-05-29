@@ -1109,7 +1109,8 @@ document.getElementById('btnSave').addEventListener('click', async () => {
   document.activeElement?.blur();
 
   /* UI 전용 요소 숨기기 */
-  const panelWasVisible = pricePanel && pricePanel.style.display !== 'none';
+  const dateIcon = document.getElementById('relDateIcon');
+  if(dateIcon) dateIcon.style.display = 'none';
   addBtn.style.display = 'none';
   if(toggleBtn) toggleBtn.style.display = 'none';
   if(pricePanel) pricePanel.style.display = 'none';
@@ -1228,6 +1229,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       t.style.minWidth   = '';
       t.style.overflow   = '';
     });
+    if(dateIcon) dateIcon.style.display = '';
     // 리뷰 select 복원
     reviewSwaps.forEach(({ wrap, inner }) => { wrap.innerHTML = inner; });
     btn.disabled = false;
