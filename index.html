@@ -1108,8 +1108,14 @@ document.getElementById('btnSave').addEventListener('click', async () => {
   btn.textContent = '저장 중...';
   document.activeElement?.blur();
 
-  /* UI 전용 요소 숨기기 */
-  const dateIcon = document.getElementById('relDateIcon');
+  // 핵옵션: 20초 후 무조건 버튼 복원
+  const forceRestore = setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = '저장하기';
+  }, 20000);
+
+  const dateIcon   = document.getElementById('relDateIcon');
+  const datePicker = document.getElementById('relDatePicker');
   const panelWasVisible = pricePanel && pricePanel.style.display !== 'none';
 
   // 리뷰 select → 텍스트 span으로 교체 (캡처용)
@@ -1117,6 +1123,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
 
   try {
     if(dateIcon) dateIcon.style.display = 'none';
+    if(datePicker) datePicker.style.display = 'none';
     addBtn.style.display = 'none';
     if(toggleBtn) toggleBtn.style.display = 'none';
     if(pricePanel) pricePanel.style.display = 'none';
@@ -1218,6 +1225,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     alert('저장 오류: ' + (err?.message || String(err)));
   } finally {
     if(dateIcon) dateIcon.style.display = '';
+    if(datePicker) datePicker.style.display = '';
     addBtn.style.display = '';
     if(toggleBtn) toggleBtn.style.display = '';
     if(pricePanel) pricePanel.style.display = panelWasVisible ? '' : 'none';
@@ -1241,6 +1249,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       t.style.overflow   = '';
     });
     reviewSwaps.forEach(({ wrap, inner }) => { try{ wrap.innerHTML = inner; }catch(e){} });
+    clearTimeout(forceRestore);
     btn.disabled = false;
     btn.innerHTML = '저장하기';
   }
