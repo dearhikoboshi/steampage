@@ -1110,88 +1110,96 @@ document.getElementById('btnSave').addEventListener('click', async () => {
 
   /* UI 전용 요소 숨기기 */
   const dateIcon = document.getElementById('relDateIcon');
-  if(dateIcon) dateIcon.style.display = 'none';
   const panelWasVisible = pricePanel && pricePanel.style.display !== 'none';
-  addBtn.style.display = 'none';
-  if(toggleBtn) toggleBtn.style.display = 'none';
-  if(pricePanel) pricePanel.style.display = 'none';
-  document.getElementById('creditColor').style.display = 'none';
-  page.querySelectorAll('.ov').forEach(el => el.style.display = 'none');
-  page.querySelectorAll('.editable').forEach(el => {
-    el.style.background = 'transparent';
-    el.style.boxShadow  = 'none';
-  });
-
-  const hubBtn = page.querySelector('.hub-btn');
-  const tagEls = [...page.querySelectorAll('.tag')];
 
   // 리뷰 select → 텍스트 span으로 교체 (캡처용)
   const reviewSwaps = [];
-  page.querySelectorAll('.review-select-wrap').forEach(wrap => {
-    const sel = wrap.querySelector('select');
-    if(!sel) return;
-    const val = sel.value;
-    const cls = sel.className.replace('review-select','').trim();
-    const countEl = wrap.querySelector('.review-count-input');
-    const count = countEl && countEl.value ? ` (${countEl.value})` : '';
-    const span = document.createElement('span');
-    span.className = cls;
-    span.textContent = val ? val + count : '평가';
-    if(!val) span.style.color = 'var(--text-dim)';
-    reviewSwaps.push({ wrap, inner: wrap.innerHTML });
-    wrap.innerHTML = '';
-    wrap.appendChild(span);
-  });
-  if (hubBtn) {
-    hubBtn.style.whiteSpace = 'nowrap';
-    hubBtn.style.width      = hubBtn.offsetWidth + 'px';
-    hubBtn.style.minWidth   = hubBtn.offsetWidth + 'px';
-    hubBtn.style.overflow   = 'hidden';
-  }
-  tagEls.forEach(t => {
-    t.style.whiteSpace = 'nowrap';
-    t.style.width      = t.offsetWidth + 'px';
-    t.style.minWidth   = t.offsetWidth + 'px';
-    t.style.overflow   = 'hidden';
-  });
-
-  const imgMap = {
-    hero: 'heroImg', capsule: 'capsuleImg',
-    t0:'ti0', t1:'ti1', t2:'ti2', t3:'ti3', t4:'ti4',
-    sim0:'simImg0', sim1:'simImg1', sim2:'simImg2', sim3:'simImg3'
-  };
-  for(const [target, dataUrl] of Object.entries(imgCache)){
-    const el = document.getElementById(imgMap[target]);
-    if(el) { el.src = dataUrl; }
-  }
-  await Promise.all([...page.querySelectorAll('img')]
-    .filter(i => !i.classList.contains('hidden') && i.src && !i.src.startsWith('data:image/gif'))
-    .map(i => i.complete ? Promise.resolve() : new Promise(r => { i.onload = r; i.onerror = r; }))
-  );
-  await new Promise(r => setTimeout(r, 150));
 
   try {
+    if(dateIcon) dateIcon.style.display = 'none';
+    addBtn.style.display = 'none';
+    if(toggleBtn) toggleBtn.style.display = 'none';
+    if(pricePanel) pricePanel.style.display = 'none';
+    document.getElementById('creditColor').style.display = 'none';
+    page.querySelectorAll('.ov').forEach(el => el.style.display = 'none');
+    page.querySelectorAll('.editable').forEach(el => {
+      el.style.background = 'transparent';
+      el.style.boxShadow  = 'none';
+    });
+
+    const hubBtn = page.querySelector('.hub-btn');
+    const tagEls = [...page.querySelectorAll('.tag')];
+
+    page.querySelectorAll('.review-select-wrap').forEach(wrap => {
+      const sel = wrap.querySelector('select');
+      if(!sel) return;
+      const val = sel.value;
+      const cls = sel.className.replace('review-select','').trim();
+      const countEl = wrap.querySelector('.review-count-input');
+      const count = countEl && countEl.value ? ` (${countEl.value})` : '';
+      const span = document.createElement('span');
+      span.className = cls;
+      span.textContent = val ? val + count : '평가';
+      if(!val) span.style.color = 'var(--text-dim)';
+      reviewSwaps.push({ wrap, inner: wrap.innerHTML });
+      wrap.innerHTML = '';
+      wrap.appendChild(span);
+    });
+
+    if (hubBtn) {
+      hubBtn.style.whiteSpace = 'nowrap';
+      hubBtn.style.width      = hubBtn.offsetWidth + 'px';
+      hubBtn.style.minWidth   = hubBtn.offsetWidth + 'px';
+      hubBtn.style.overflow   = 'hidden';
+    }
+    tagEls.forEach(t => {
+      t.style.whiteSpace = 'nowrap';
+      t.style.width      = t.offsetWidth + 'px';
+      t.style.minWidth   = t.offsetWidth + 'px';
+      t.style.overflow   = 'hidden';
+    });
+
+    const imgMap = {
+      hero: 'heroImg', capsule: 'capsuleImg',
+      t0:'ti0', t1:'ti1', t2:'ti2', t3:'ti3', t4:'ti4',
+      sim0:'simImg0', sim1:'simImg1', sim2:'simImg2', sim3:'simImg3'
+    };
+    for(const [target, dataUrl] of Object.entries(imgCache)){
+      const el = document.getElementById(imgMap[target]);
+      if(el) { el.src = dataUrl; }
+    }
+    await Promise.all([...page.querySelectorAll('img')]
+      .filter(i => !i.classList.contains('hidden') && i.src && !i.src.startsWith('data:image/gif'))
+      .map(i => i.complete ? Promise.resolve() : new Promise(r => { i.onload = r; i.onerror = r; }))
+    );
+    await new Promise(r => setTimeout(r, 150));
+
     const W = page.offsetWidth;
     const H = page.offsetHeight;
     const scale = Math.max(window.devicePixelRatio || 1, 2);
-    const dataUrl = await domtoimage.toPng(page, {
-      width:  W * scale,
-      height: H * scale,
-      bgcolor: '#1b2838',
-      style: {
-        transform: `scale(${scale})`,
-        transformOrigin: 'top left',
-        width:  W + 'px',
-        height: H + 'px',
-      },
-      filter: node => {
-        if (node.id === 'btnAddTag') return false;
-        if (node.classList?.contains('ov')) return false;
-        if (node.id === 'creditColor') return false;
-        if (node.id === 'btnToggleSimilar') return false;
-        return true;
-      },
-    });
+
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('저장 시간 초과')), 15000));
+    const dataUrl = await Promise.race([
+      domtoimage.toPng(page, {
+        width:  W * scale,
+        height: H * scale,
+        bgcolor: '#1b2838',
+        style: {
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          width:  W + 'px',
+          height: H + 'px',
+        },
+        filter: node => {
+          if (node.id === 'btnAddTag') return false;
+          if (node.classList?.contains('ov')) return false;
+          if (node.id === 'creditColor') return false;
+          if (node.id === 'btnToggleSimilar') return false;
+          return true;
+        },
+      }),
+      timeout
+    ]);
 
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isIOS) {
@@ -1209,6 +1217,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     console.error(err);
     alert('저장 오류: ' + (err?.message || String(err)));
   } finally {
+    if(dateIcon) dateIcon.style.display = '';
     addBtn.style.display = '';
     if(toggleBtn) toggleBtn.style.display = '';
     if(pricePanel) pricePanel.style.display = panelWasVisible ? '' : 'none';
@@ -1218,21 +1227,20 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       el.style.background = '';
       el.style.boxShadow  = '';
     });
-    if (hubBtn) {
-      hubBtn.style.whiteSpace = '';
-      hubBtn.style.width      = '';
-      hubBtn.style.minWidth   = '';
-      hubBtn.style.overflow   = '';
+    const hubBtnR = page.querySelector('.hub-btn');
+    if(hubBtnR){
+      hubBtnR.style.whiteSpace = '';
+      hubBtnR.style.width      = '';
+      hubBtnR.style.minWidth   = '';
+      hubBtnR.style.overflow   = '';
     }
-    tagEls.forEach(t => {
+    page.querySelectorAll('.tag').forEach(t => {
       t.style.whiteSpace = '';
       t.style.width      = '';
       t.style.minWidth   = '';
       t.style.overflow   = '';
     });
-    if(dateIcon) dateIcon.style.display = '';
-    // 리뷰 select 복원
-    reviewSwaps.forEach(({ wrap, inner }) => { wrap.innerHTML = inner; });
+    reviewSwaps.forEach(({ wrap, inner }) => { try{ wrap.innerHTML = inner; }catch(e){} });
     btn.disabled = false;
     btn.innerHTML = '저장하기';
   }
