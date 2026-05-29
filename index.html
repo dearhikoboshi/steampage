@@ -296,6 +296,49 @@ button{cursor:pointer;font-family:inherit;}
 .mv{color:var(--text);}
 .mv.lnk{color:var(--blue);}
 
+/* ── REVIEW DROPDOWN ── */
+.review-select-wrap{display:inline-block;position:relative;}
+.review-select{
+  appearance:none;-webkit-appearance:none;
+  background:transparent;
+  border:none;
+  font-family:inherit;font-size:inherit;
+  cursor:pointer;
+  padding:0 16px 0 0;
+  color:var(--text-dim);
+  outline:none;
+  max-width:160px;
+}
+.review-select:hover{text-decoration:underline;}
+.review-select option{
+  background:#1b2838;color:#c6d4df;
+}
+.review-select optgroup{
+  background:#1b2838;color:#7a96a8;
+  font-size:11px;
+}
+.review-select-arrow{
+  position:absolute;right:0;top:50%;transform:translateY(-50%);
+  pointer-events:none;color:var(--text-dim);opacity:.6;
+  line-height:1;font-size:10px;
+}
+/* 색상 클래스 */
+.rev-positive{color:#4d9be6!important;}
+.rev-mixed   {color:#c8a951!important;}
+.rev-negative{color:#c25f5f!important;}
+.rev-none    {color:var(--text-dim)!important;}
+.review-count-input{
+  background:transparent;
+  border:none;
+  border-bottom:1px solid rgba(76,107,130,.5);
+  color:var(--text-dim);
+  font-family:inherit;font-size:inherit;
+  width:3.5em;text-align:center;
+  padding:0 2px;
+  outline:none;
+}
+.review-count-input:focus{border-bottom-color:var(--blue);}
+
 /* tags */
 .tags-area{display:flex;flex-direction:column;gap:6px;}
 .tags-head{font-size:11px;color:var(--text-dim);}
@@ -644,15 +687,19 @@ button{cursor:pointer;font-family:inherit;}
       <div class="meta">
         <div class="meta-row">
           <span class="ml">최근 평가:</span>
-          <span class="mv lnk editable" contenteditable="true" data-ph="평가"></span>
+          <span class="mv review-select-wrap" id="recentReviewWrap"></span>
         </div>
         <div class="meta-row">
           <span class="ml">한국어 평가:</span>
-          <span class="mv lnk editable" contenteditable="true" data-ph="평가"></span>
+          <span class="mv review-select-wrap" id="koreanReviewWrap"></span>
         </div>
         <div class="meta-row">
           <span class="ml">출시일:</span>
-          <span class="mv editable" contenteditable="true" data-ph="출시일"></span>
+          <span class="mv" id="relDateDisplay" data-ph="출시일" style="cursor:pointer;display:flex;align-items:center;gap:5px;">
+            <input type="date" id="relDatePicker" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
+            <span id="relDateText" style="color:var(--text-dim);">출시일</span>
+            <svg id="relDateIcon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-dim);flex-shrink:0;opacity:.7"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>
+          </span>
         </div>
         <div class="meta-row">
           <span class="ml">개발자:</span>
@@ -805,6 +852,114 @@ const SIM_DEFAULT_TITLES = ['게임 제목 1', '게임 제목 2', '게임 제목
     sec.style.display   = visible ? '' : 'none';
     panel.style.display = visible ? '' : 'none';
     btn.textContent = visible ? '비슷한 게임 탭 숨기기' : '비슷한 게임 탭 보이기';
+  });
+})();
+
+/* ── REVIEW DROPDOWNS ── */
+(function initReviews(){
+  const RATINGS = [
+    { label:'평가 선택', group:null, cls:'rev-none' },
+    { label:'압도적으로 긍정적', group:'긍정적', cls:'rev-positive' },
+    { label:'매우 긍정적',       group:'긍정적', cls:'rev-positive' },
+    { label:'대체로 긍정적',     group:'긍정적', cls:'rev-positive' },
+    { label:'긍정적',            group:'긍정적', cls:'rev-positive' },
+    { label:'복합적',            group:'복합적', cls:'rev-mixed'    },
+    { label:'대체로 부정적',     group:'부정적', cls:'rev-negative' },
+    { label:'부정적',            group:'부정적', cls:'rev-negative' },
+    { label:'매우 부정적',       group:'부정적', cls:'rev-negative' },
+    { label:'압도적으로 부정적', group:'부정적', cls:'rev-negative' },
+  ];
+
+  function buildSelect(wrapperId){
+    const wrap = document.getElementById(wrapperId);
+    if(!wrap) return;
+
+    // select 빌드
+    const sel = document.createElement('select');
+    sel.className = 'review-select rev-none';
+
+    let curGroup = null;
+    let optgroup = null;
+    RATINGS.forEach((r, i) => {
+      if(i === 0){
+        const opt = document.createElement('option');
+        opt.value = ''; opt.textContent = r.label;
+        sel.appendChild(opt);
+        return;
+      }
+      if(r.group !== curGroup){
+        optgroup = document.createElement('optgroup');
+        optgroup.label = '── ' + r.group + ' ──';
+        sel.appendChild(optgroup);
+        curGroup = r.group;
+      }
+      const opt = document.createElement('option');
+      opt.value = r.label;
+      opt.textContent = r.label;
+      optgroup.appendChild(opt);
+    });
+
+    sel.addEventListener('change', () => {
+      const found = RATINGS.find(r => r.label === sel.value);
+      sel.className = 'review-select ' + (found ? found.cls : 'rev-none');
+      countWrap.style.display = sel.value ? 'inline' : 'none';
+    });
+
+    const countWrap = document.createElement('span');
+    countWrap.style.cssText = 'display:none;';
+    const countPre = document.createElement('span');
+    countPre.textContent = ' (';
+    countPre.style.cssText = 'color:var(--text-dim);font-size:inherit;';
+    const countInput = document.createElement('input');
+    countInput.type = 'text';
+    countInput.placeholder = '0';
+    countInput.className = 'review-count-input';
+    const countPost = document.createElement('span');
+    countPost.textContent = ')';
+    countPost.style.cssText = 'color:var(--text-dim);font-size:inherit;';
+    countWrap.appendChild(countPre);
+    countWrap.appendChild(countInput);
+    countWrap.appendChild(countPost);
+
+    const arrow = document.createElement('span');
+    arrow.className = 'review-select-arrow';
+    arrow.textContent = '▾';
+
+    wrap.appendChild(sel);
+    wrap.appendChild(arrow);
+    wrap.appendChild(countWrap);
+  }
+
+  buildSelect('recentReviewWrap');
+  buildSelect('koreanReviewWrap');
+})();
+
+/* ── DATE PICKER ── */
+(function initDatePicker(){
+  const display = document.getElementById('relDateDisplay');
+  const picker  = document.getElementById('relDatePicker');
+  const text    = document.getElementById('relDateText');
+  const icon    = document.getElementById('relDateIcon');
+
+  function formatKorean(val){
+    if(!val) return null;
+    const [y, m, d] = val.split('-').map(Number);
+    return `${y}년 ${m}월 ${d}일`;
+  }
+
+  display.addEventListener('click', () => {
+    picker.style.pointerEvents = 'auto';
+    picker.showPicker ? picker.showPicker() : picker.click();
+  });
+
+  picker.addEventListener('change', () => {
+    const label = formatKorean(picker.value);
+    if(label){
+      text.textContent = label;
+      text.style.color = 'var(--text-bright)';
+      icon.style.opacity = '.5';
+    }
+    picker.style.pointerEvents = 'none';
   });
 })();
 
@@ -967,6 +1122,24 @@ document.getElementById('btnSave').addEventListener('click', async () => {
 
   const hubBtn = page.querySelector('.hub-btn');
   const tagEls = [...page.querySelectorAll('.tag')];
+
+  // 리뷰 select → 텍스트 span으로 교체 (캡처용)
+  const reviewSwaps = [];
+  page.querySelectorAll('.review-select-wrap').forEach(wrap => {
+    const sel = wrap.querySelector('select');
+    if(!sel) return;
+    const val = sel.value;
+    const cls = sel.className.replace('review-select','').trim();
+    const countEl = wrap.querySelector('.review-count-input');
+    const count = countEl && countEl.value ? ` (${countEl.value})` : '';
+    const span = document.createElement('span');
+    span.className = cls;
+    span.textContent = val ? val + count : '평가';
+    if(!val) span.style.color = 'var(--text-dim)';
+    reviewSwaps.push({ wrap, inner: wrap.innerHTML });
+    wrap.innerHTML = '';
+    wrap.appendChild(span);
+  });
   if (hubBtn) {
     hubBtn.style.whiteSpace = 'nowrap';
     hubBtn.style.width      = hubBtn.offsetWidth + 'px';
@@ -1055,6 +1228,8 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       t.style.minWidth   = '';
       t.style.overflow   = '';
     });
+    // 리뷰 select 복원
+    reviewSwaps.forEach(({ wrap, inner }) => { wrap.innerHTML = inner; });
     btn.disabled = false;
     btn.innerHTML = '저장하기';
   }
