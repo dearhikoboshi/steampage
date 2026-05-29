@@ -1111,6 +1111,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
   /* UI 전용 요소 숨기기 */
   const dateIcon = document.getElementById('relDateIcon');
   if(dateIcon) dateIcon.style.display = 'none';
+  const panelWasVisible = pricePanel && pricePanel.style.display !== 'none';
   addBtn.style.display = 'none';
   if(toggleBtn) toggleBtn.style.display = 'none';
   if(pricePanel) pricePanel.style.display = 'none';
