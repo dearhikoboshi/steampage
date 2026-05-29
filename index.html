@@ -1148,9 +1148,11 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       span.className = cls;
       span.textContent = val ? val + count : '평가';
       if(!val) span.style.color = 'var(--text-dim)';
-      reviewSwaps.push({ wrap, inner: wrap.innerHTML });
-      wrap.innerHTML = '';
+      // 기존 노드들을 숨기고 span만 보이게 (노드는 유지)
+      const origNodes = [...wrap.childNodes];
+      origNodes.forEach(n => { if(n.style) n.style.display = 'none'; });
       wrap.appendChild(span);
+      reviewSwaps.push({ wrap, span, origNodes });
     });
 
     if (hubBtn) {
@@ -1248,7 +1250,12 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       t.style.minWidth   = '';
       t.style.overflow   = '';
     });
-    reviewSwaps.forEach(({ wrap, inner }) => { try{ wrap.innerHTML = inner; }catch(e){} });
+    reviewSwaps.forEach(({ wrap, span, origNodes }) => {
+      try {
+        wrap.removeChild(span);
+        origNodes.forEach(n => { if(n.style) n.style.display = ''; });
+      } catch(e) {}
+    });
     clearTimeout(forceRestore);
     btn.disabled = false;
     btn.innerHTML = '저장하기';
